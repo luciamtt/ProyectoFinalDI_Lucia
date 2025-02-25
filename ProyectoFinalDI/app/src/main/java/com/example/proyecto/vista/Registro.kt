@@ -1,126 +1,121 @@
-package com.example.proyecto.vista
+package com.example.proyecto.vista;
 
-import android.widget.Toast
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.proyecto.ui.theme.ProyectoTheme
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.navigation.NavController  // Importa el NavController
+import androidx.navigation.compose.rememberNavController
 
 @Composable
+fun RegisterScreen(navController: NavController) {
+    val username = remember { mutableStateOf("") }
+    val password = remember { mutableStateOf("") }
+    val confirmPassword = remember { mutableStateOf("") }
 
-fun RegisterScreen(onRegisterSuccess: (String, String)-> Unit){
-    var name by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
-    var confirmPasswordVisible by remember { mutableStateOf(false) }
-
-    val context =  LocalContext.current
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F5F5)) // Fondo suave
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Text(text = "Registro", style = MaterialTheme.typography.headlineLarge)
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text("Nombre Usuario") },
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth()
-
-        )
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Contraseña") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                val image = if (passwordVisible) Icons.Filled.Warning else Icons.Filled.PlayArrow
-                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = image, contentDescription = "Toggle Password Visibility")
-
-                }
-            },
-            modifier = Modifier.fillMaxSize()
-
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = confirmPassword,
-            onValueChange = { confirmPassword = it },
-            label = { Text("Confirmar Contraseña") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                val image = if (confirmPasswordVisible) Icons.Filled.Check else Icons.Filled.Clear
-                IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                    Icon(imageVector = image, contentDescription = "Toggle Password Visibility")
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = {
-            if(name.isBlank() || password.isBlank() || confirmPassword.isBlank()){
-                Toast.makeText(context, "Todos los campos son obligatorios", Toast.LENGTH_SHORT).show()
-            }
-            if ( password != confirmPassword){
-                Toast.makeText(context, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show()
-            }
-            else{
-                Toast.makeText(context, "Registro exitoso", Toast.LENGTH_SHORT).show()
-            }
-        },
-            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Registrarse",
+                fontSize = 32.sp,
+                color = Color(0xFF6200EE),
+                modifier = Modifier.padding(bottom = 32.dp)
             )
-        {
-            Text(text = "Registrarse")
-        }
 
+            // Campo de nombre de usuario
+            OutlinedTextField(
+                value = username.value,
+                onValueChange = { username.value = it },
+                label = { Text("Usuario") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                singleLine = true
+            )
+
+            // Campo de contraseña
+            OutlinedTextField(
+                value = password.value,
+                onValueChange = { password.value = it },
+                label = { Text("Contraseña") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
+                visualTransformation = PasswordVisualTransformation() // Para ocultar la contraseña
+            )
+
+            // Campo de confirmar contraseña
+            OutlinedTextField(
+                value = confirmPassword.value,
+                onValueChange = { confirmPassword.value = it },
+                label = { Text("Confirmar Contraseña") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
+                visualTransformation = PasswordVisualTransformation() // Para ocultar la contraseña
+            )
+
+            // Botón de registro
+            Button(
+                onClick = {
+                    // Aquí puedes añadir la lógica de registro
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
+            ) {
+                Text("Registrar", color = Color.White, fontSize = 18.sp)
             }
-    }
 
+            Spacer(modifier = Modifier.height(16.dp))
 
-
-@Preview(showBackground = true)
-@Composable
-fun regitrarPreview() {
-    ProyectoTheme {
-        RegisterScreen { _, _->}
+            // Botón para regresar al login
+            TextButton(
+                onClick = {
+                    navController.navigate("login")  // Navegar de vuelta a la pantalla de login
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = "¿Ya tienes una cuenta? Inicia sesión aquí",
+                    color = Color(0xFF6200EE),
+                    fontSize = 16.sp
+                )
+            }
+        }
     }
 }
 
