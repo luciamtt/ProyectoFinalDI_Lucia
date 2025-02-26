@@ -1,33 +1,51 @@
-package com.example.proyecto.vista;
+package com.example.proyecto.vista
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.navigation.NavController  // Importa el NavController
+import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+
 
 @Composable
 fun LoginScreen(navController: NavController) {
-    val username = remember { mutableStateOf("") }
-    val password = remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val sharedPreferences = remember { context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE) }
+    val gson = Gson()
+
+    var username by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
+
+    // Check if user is already logged in
+    LaunchedEffect(Unit) {
+        val savedUser = sharedPreferences.getString("logged_user", null)
+        if (savedUser != null) {
+            navController.navigate("home") {
+                popUpTo("login") { inclusive = true }
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F5)) // Fondo suave
+            .background(Color(0xFFF5F5F5))
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -45,8 +63,8 @@ fun LoginScreen(navController: NavController) {
 
             // Campo de usuario
             OutlinedTextField(
-                value = username.value,
-                onValueChange = { username.value = it },
+                value = username,
+                onValueChange = { username = it },
                 label = { Text("Usuario") },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -56,12 +74,12 @@ fun LoginScreen(navController: NavController) {
 
             // Campo de contraseña
             OutlinedTextField(
-                value = password.value,
-                onValueChange = { password.value = it },
+                value = password,
+                onValueChange = { password = it },
                 label = { Text("Contraseña") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp),
+                    .padding(bottom = 16.dp),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Password,
@@ -70,10 +88,28 @@ fun LoginScreen(navController: NavController) {
                 visualTransformation = PasswordVisualTransformation() // Para ocultar la contraseña
             )
 
+            // Mensaje de error
+            if (errorMessage.isNotEmpty()) {
+                Text(text = errorMessage, color = Color.Red, fontSize = 14.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             // Botón de inicio de sesión
             Button(
                 onClick = {
-                    // Aquí puedes añadir la lógica de autenticación
+                    val usersJson = sharedPreferences.getString("users", "[]") ?: "[]"
+                    val userList = gson.fromJson<List<User>>(usersJson, object : TypeToken<List<User>>() {}.type)
+
+                    val user = userList.find { it.username == username && it.password == password }
+                    if (user != null) {
+                        // Guardar al usuario como "logueado"
+                        sharedPreferences.edit().putString("logged_user", username).apply()
+                        navController.navigate("home") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    } else {
+                        errorMessage = "Usuario o contraseña incorrectos"
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -105,6 +141,5 @@ fun LoginScreen(navController: NavController) {
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
-
     LoginScreen(navController = rememberNavController())
 }
