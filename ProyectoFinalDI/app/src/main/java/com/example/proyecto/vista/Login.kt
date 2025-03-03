@@ -11,16 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -32,13 +29,10 @@ fun LoginScreen(navController: NavController) {
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
-    // Check if user is already logged in
     LaunchedEffect(Unit) {
         val savedUser = sharedPreferences.getString("logged_user", null)
         if (savedUser != null) {
-            navController.navigate("home") {
-                popUpTo("login") { inclusive = true }
-            }
+            navController.navigate("body_data")
         }
     }
 
@@ -61,7 +55,6 @@ fun LoginScreen(navController: NavController) {
                 modifier = Modifier.padding(bottom = 32.dp)
             )
 
-            // Campo de usuario
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
@@ -72,7 +65,6 @@ fun LoginScreen(navController: NavController) {
                 singleLine = true
             )
 
-            // Campo de contraseña
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -85,16 +77,14 @@ fun LoginScreen(navController: NavController) {
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
                 ),
-                visualTransformation = PasswordVisualTransformation() // Para ocultar la contraseña
+                visualTransformation = PasswordVisualTransformation()
             )
 
-            // Mensaje de error
             if (errorMessage.isNotEmpty()) {
                 Text(text = errorMessage, color = Color.Red, fontSize = 14.sp)
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // Botón de inicio de sesión
             Button(
                 onClick = {
                     val usersJson = sharedPreferences.getString("users", "[]") ?: "[]"
@@ -102,11 +92,8 @@ fun LoginScreen(navController: NavController) {
 
                     val user = userList.find { it.username == username && it.password == password }
                     if (user != null) {
-                        // Guardar al usuario como "logueado"
                         sharedPreferences.edit().putString("logged_user", username).apply()
-                        navController.navigate("home") {
-                            popUpTo("login") { inclusive = true }
-                        }
+                        navController.navigate("body_data")  // NAVEGA A BODY DATA
                     } else {
                         errorMessage = "Usuario o contraseña incorrectos"
                     }
@@ -121,25 +108,19 @@ fun LoginScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón para ir al registro
+            // Botón para ir a la pantalla de Registro
             TextButton(
                 onClick = {
-                    navController.navigate("register")  // Navegar a la pantalla de registro
+                    navController.navigate("register")  // Redirigir a la pantalla de registro
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
-                    text = "¿No tienes una cuenta? Regístrate aquí",
+                    text = "¿No tienes cuenta? Regístrate aquí",
                     color = Color(0xFF6200EE),
                     fontSize = 16.sp
                 )
             }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    LoginScreen(navController = rememberNavController())
 }

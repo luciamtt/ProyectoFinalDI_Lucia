@@ -14,20 +14,13 @@ import com.example.proyecto.vista.RegisterScreen
 fun AppNavHost() {
     val navController = rememberNavController()
 
-    NavHost(
-        navController = navController,
-        startDestination = "login"
-    ) {
-        composable("login") {
-            LoginScreen(navController)
-        }
-
-        composable("register") {
-            RegisterScreen(navController)
-        }
-        composable("bodyData") { BodyData(navController) }
-        composable("someOtherScreen") {
-            // Aquí iría la siguiente pantalla que deseas que se muestre después de guardar los datos
-        }
+    NavHost(navController, startDestination = "login") {
+        composable("login")
+        { LoginScreen(navController) }
+        composable("register")
+        { RegisterScreen(navController) }
+        composable("body_data")
+        { BodyData(navController) }
     }
+
 }
