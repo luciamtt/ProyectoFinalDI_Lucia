@@ -2,6 +2,7 @@ package com.example.proyecto.vista
 
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -177,6 +178,64 @@ fun TestDetailScreen(navController: NavController, testName: String) {
         }
     }
 }
+@Composable
+fun TestEvaluationScreen(navController: NavController, testName: String) {
+    val context = LocalContext.current
+    val prefs = context.getSharedPreferences("test_scores", Context.MODE_PRIVATE)
+
+    var input1 by remember { mutableStateOf(prefs.getInt("$testName-input1", 0).toString()) }
+    var input2 by remember { mutableStateOf(prefs.getInt("$testName-input2", 0).toString()) }
+    var result by remember { mutableStateOf("") }
+
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text(text = "Evaluación de $testName", style = MaterialTheme.typography.headlineMedium)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = input1,
+            onValueChange = { input1 = it },
+            label = { Text("Dato 1") },
+            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = input2,
+            onValueChange = { input2 = it },
+            label = { Text("Dato 2") },
+            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = {
+            val score = calcularNota(input1.toIntOrNull() ?: 0, input2.toIntOrNull() ?: 0)
+            result = "Nota Calculada: $score"
+            saveScore(prefs, testName, input1.toIntOrNull() ?: 0, input2.toIntOrNull() ?: 0)
+        }) {
+            Text("Calcular Nota")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(text = result, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+fun calcularNota(valor1: Int, valor2: Int): Double {
+    return (valor1 + valor2) / 2.0
+}
+
+fun saveScore(prefs: SharedPreferences, testName: String, input1: Int, input2: Int) {
+    prefs.edit()
+        .putInt("$testName-input1", input1)
+        .putInt("$testName-input2", input2)
+        .apply()
+}
 
 @Composable
 fun TestCard(test: PhysicalTest, navController: NavController, context: Context) {
@@ -184,17 +243,17 @@ fun TestCard(test: PhysicalTest, navController: NavController, context: Context)
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 16.dp)
-            .clickable { openUrlInBrowser(test.detailUrl, context) },
+            .clickable {
+                navController.navigate("test_evaluation/${test.name}") // 🔹 Ahora lleva a la pantalla de evaluación
+            },
         colors = CardDefaults.cardColors(containerColor = Color(0xFFE0E0E0))
     ) {
         Row(modifier = Modifier.padding(16.dp)) {
-            // Imagen de la prueba utilizando painterResource para cargar una imagen local
             Image(
                 painter = painterResource(id = test.imageResId),
                 contentDescription = test.name,
                 modifier = Modifier.size(100.dp).padding(end = 16.dp)
             )
-            // Información de la prueba
             Column(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.Start
@@ -216,15 +275,15 @@ fun TestCard(test: PhysicalTest, navController: NavController, context: Context)
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                TextButton(onClick = {
-                    openUrlInBrowser(test.detailUrl, context)
-                }) {
+
+                TextButton(onClick = { openUrlInBrowser(test.detailUrl, context) }) {
                     Text(text = "Explicar prueba", color = Color(0xFF6200EE))
                 }
             }
         }
     }
 }
+
 
 // Función para abrir el enlace en el navegador
 fun openUrlInBrowser(url: String, context: Context) {
@@ -234,104 +293,107 @@ fun openUrlInBrowser(url: String, context: Context) {
 
 
 fun calcularNota(abdominales: Int, flexibilidad: Int, testCooper: Int, velocidad: Int): Double {
-    // Puntaje base para cada test. Vamos a utilizar un sistema simple de asignación de puntos:
 
-    // Abdominales: Supongamos que por cada abdominal realizado se otorgan 0.5 puntos, con un máximo de 30 abdominales.
-    val abdominalesScore = if (abdominales in 0..30) abdominales * 0.5 else 15.0  // Maximo 15 puntos
+    val abdominalesScore = if (abdominales in 0..30) abdominales * 0.5 else 15.0
 
-    // Flexibilidad: Vamos a asumir que por cada cm de flexibilidad se da un puntaje, hasta un máximo de -20cm a 20cm (donde 0 es el objetivo).
     val flexibilidadScore = when {
-        flexibilidad >= 20 -> 10.0  // Muy flexible, puntaje máximo.
-        flexibilidad >= 10 -> 8.0   // Bueno.
-        flexibilidad >= 0 -> 6.0    // Promedio.
-        flexibilidad >= -10 -> 4.0  // Bajo.
-        flexibilidad >= -20 -> 2.0  // Muy bajo.
-        else -> 0.0                 // No llegas a tocar los pies, puntaje mínimo.
+        flexibilidad >= 20 -> 10.0
+        flexibilidad >= 10 -> 8.0
+        flexibilidad >= 0 -> 6.0
+        flexibilidad >= -10 -> 4.0
+        flexibilidad >= -20 -> 2.0
+        else -> 0.0
     }
 
-    // Test Cooper: El puntaje depende del número de períodos alcanzados.
     val cooperScore = when {
-        testCooper >= 12 -> 10.0  // Muy bueno, más de 12 períodos.
-        testCooper >= 9  -> 8.0   // Bueno, entre 9 y 11 períodos.
-        testCooper >= 6  -> 6.0   // Promedio, entre 6 y 8 períodos.
-        testCooper >= 3  -> 4.0   // Bajo, entre 3 y 5 períodos.
-        else -> 2.0                // Muy bajo, menos de 3 períodos.
+        testCooper >= 12 -> 10.0
+        testCooper >= 9  -> 8.0
+        testCooper >= 6  -> 6.0
+        testCooper >= 3  -> 4.0
+        else -> 2.0
     }
 
-    // Velocidad 5x10: Dependiendo del tiempo empleado en segundos.
     val velocidadScore = when {
-        velocidad <= 30 -> 10.0  // Muy rápido, menos de 30 segundos.
-        velocidad <= 35 -> 8.0   // Bueno, entre 30-35 segundos.
-        velocidad <= 40 -> 6.0   // Promedio, entre 36-40 segundos.
-        velocidad <= 45 -> 4.0   // Bajo, entre 41-45 segundos.
-        else -> 2.0              // Muy bajo, más de 45 segundos.
+        velocidad <= 30 -> 10.0
+        velocidad <= 35 -> 8.0
+        velocidad <= 40 -> 6.0
+        velocidad <= 45 -> 4.0
+        else -> 2.0
     }
 
-    // Calculando la nota total combinando los puntajes obtenidos
     val notaFinal = (abdominalesScore + flexibilidadScore + cooperScore + velocidadScore) / 4
 
     return notaFinal
 }
 
 @Composable
-fun ImcScreen(navController: NavController) {
-    // Estados para almacenar el peso y la altura
-    var weight by remember { mutableStateOf("") }
-    var height by remember { mutableStateOf("") }
-    var imcResult by remember { mutableStateOf(0.0) }
+fun IMCScreen(navController: NavController) {
+    var peso by remember { mutableStateOf("") }
+    var altura by remember { mutableStateOf("") }
+    var imcResultado by remember { mutableStateOf<Double?>(null) }
+    var categoriaIMC by remember { mutableStateOf("") }
 
-    // Calcular IMC
-    fun calculateImc(weight: String, height: String): Double {
-        val weightValue = weight.toDoubleOrNull()
-        val heightValue = height.toDoubleOrNull()
+    Column(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Calculadora de IMC", fontSize = 24.sp, modifier = Modifier.padding(bottom = 16.dp))
 
-        if (weightValue != null && heightValue != null && heightValue > 0) {
-            return weightValue / (heightValue * heightValue)
-        }
-
-        return 0.0
-    }
-
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text(text = "Calcular IMC", style = MaterialTheme.typography.bodyMedium)
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Campo para el peso
-        TextField(
-            value = weight,
-            onValueChange = { weight = it },
+        OutlinedTextField(
+            value = peso,
+            onValueChange = { peso = it },
             label = { Text("Peso (kg)") },
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Campo para la altura
-        TextField(
-            value = height,
-            onValueChange = { height = it },
+        OutlinedTextField(
+            value = altura,
+            onValueChange = { altura = it },
             label = { Text("Altura (m)") },
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Botón para calcular el IMC
         Button(onClick = {
-            imcResult = calculateImc(weight, height)
+            val pesoKg = peso.toDoubleOrNull()
+            val alturaM = altura.toDoubleOrNull()
+
+            if (pesoKg != null && alturaM != null && alturaM > 0) {
+                val imc = calcularIMC(pesoKg, alturaM)
+                imcResultado = imc
+                categoriaIMC = obtenerCategoriaIMC(imc)
+            } else {
+                imcResultado = null
+                categoriaIMC = "Ingrese valores válidos"
+            }
         }) {
-            Text(text = "Calcular IMC")
+            Text("Calcular IMC")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Mostrar el IMC calculado
-        if (imcResult > 0) {
-            Text(text = "Tu IMC es: %.2f".format(imcResult), style = MaterialTheme.typography.bodyMedium)
+        imcResultado?.let {
+            Text("Tu IMC es: ${"%.2f".format(it)}", fontSize = 20.sp)
+            Text("Categoría: $categoriaIMC", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
         }
     }
 }
+
+// Función para calcular la categoría del IMC
+fun obtenerCategoriaIMC(imc: Double): String {
+    return when {
+        imc < 18.5 -> "Bajo peso"
+        imc < 24.9 -> "Peso normal"
+        imc < 29.9 -> "Sobrepeso"
+        else -> "Obesidad"
+    }
+
+}
+fun calcularIMC(peso: Double, altura: Double): Double {
+    return if (altura > 0) peso / (altura * altura) else 0.0
+}
+
 
