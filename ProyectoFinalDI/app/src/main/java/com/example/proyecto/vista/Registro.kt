@@ -1,8 +1,6 @@
-package com.example.proyecto.vista;
+package com.example.proyecto.vista
 
-import androidx.compose.ui.tooling.preview.Preview
 import android.content.Context
-import android.content.SharedPreferences
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -18,17 +16,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-
-data class User(val username: String, val password: String)
 
 @Composable
 fun RegisterScreen(navController: NavController) {
     val context = LocalContext.current
     val sharedPreferences = remember { context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE) }
-    val gson = Gson()
 
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -39,11 +31,7 @@ fun RegisterScreen(navController: NavController) {
         modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F5)).padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
             Text(text = "Registrarse", fontSize = 32.sp, color = Color(0xFF6200EE), modifier = Modifier.padding(bottom = 32.dp))
 
             OutlinedTextField(value = username, onValueChange = { username = it }, label = { Text("Usuario") },
@@ -66,24 +54,18 @@ fun RegisterScreen(navController: NavController) {
 
             Button(
                 onClick = {
-                    if (username.isNotEmpty() && password.isNotEmpty() && confirmPassword.isNotEmpty()) {
-                        if (password == confirmPassword) {
-                            val usersJson = sharedPreferences.getString("users", "[]") ?: "[]"
-                            val userList = gson.fromJson<List<User>>(usersJson, object : TypeToken<List<User>>() {}.type).toMutableList()
+                    val savedUsername = sharedPreferences.getString("username", null)
 
-                            if (userList.any { it.username == username }) {
-                                errorMessage = "El usuario ya existe"
-                            } else {
-                                userList.add(User(username, password))
-                                sharedPreferences.edit().putString("users", gson.toJson(userList)).apply()
-
-                                navController.navigate("login")
-                            }
-                        } else {
-                            errorMessage = "Las contraseñas no coinciden"
-                        }
-                    } else {
+                    if (savedUsername != null) {
+                        errorMessage = "Ya existe un usuario registrado"
+                    } else if (username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
                         errorMessage = "Por favor, completa todos los campos"
+                    } else if (password != confirmPassword) {
+                        errorMessage = "Las contraseñas no coinciden"
+                    } else {
+                        sharedPreferences.edit().putString("username", username).apply()
+                        sharedPreferences.edit().putString("password", password).apply()
+                        navController.navigate("login")
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -94,7 +76,7 @@ fun RegisterScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextButton(onClick = { navController.navigate("login") }, modifier = Modifier.fillMaxWidth()) {
+            TextButton(onClick = { navController.navigate("login") }) {
                 Text(text = "¿Ya tienes una cuenta? Inicia sesión aquí", color = Color(0xFF6200EE), fontSize = 16.sp)
             }
         }
